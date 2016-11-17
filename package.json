@@ -1,0 +1,23 @@
+{
+    "name": "convio-beautifier",
+    "version": "1.0.0",
+    "description": "Small utility for pretty printing Convio code",
+    "main": "app.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Christopher D Engle",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/poweroftheforce/convio-beautifier.git"
+    },
+    "bugs": {
+        "url": "https://github.com/poweroftheforce/convio-beautifier/issues"
+    },
+    "homepage": "https://github.com/poweroftheforce/convio-beautifier#readme",
+    "dependencies": {
+        "nodemon": "^1.11.0",
+        "express": "*"
+    }
+}

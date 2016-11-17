@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Convio Conditional Minifier / Beautifier</title>
+
+<link rel="stylesheet" type="text/css" href="main.min.css"/>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+<script src="js/cnvo-beautify.js"></script>
+
+</head>
+
+<body>
+
+	<ul>
+		<li>
+			<h2>Sample 1</h2>
+			<p>[[?xxnullx::x[[S42:0:fr-id]]x:: <!-- no id --> [[U0:TeamRaiserID=[[S80:trID]]]]::[[U0:TeamRaiserID=[[S42:0:fr-id]]]]]]</p>
+		</li>
+		<li>
+			<h2>Sample 2</h2>
+			<p>[[?[[?[[S8]]::team_id::T::]][[?[[S8]]::pg=personal::T::]]::T::<!-- Team or personal page -->[[S51:RFL_FY12_styles]][[S51:RFL_FY12_styles_team]]:: [[?[[S8]]::pg=company::<!--Company page 555555555555  -->[[S51:RFL_FY12_styles]][[S51:RFL_FY12_styles_company]]:: [[S51:RFL_FY12_styles]][[S51:RFL_FY12_reus_head]]]]]]</p>
+		</li>
+		<li>
+			<h2>Sample 3</h2>
+			<p>[[?xxnullx::x[[S334:FR_ID]]x::[[?xxnullx::x[[S334:fr_id]]x::[[?xRR_FY12_PC2x::x[[S334:pagename]]x::[[U0:TeamRaiserID=[[E130:[[T8:[[S50:Cookie]]]] dup dup "frId=" indexof 5 + swap length substring dup 0 swap ";" indexof substring]]]]::[[?xxnullx::x[[S42:0:fr-id]]x::<!-- no id -->[[U0:TeamRaiserID=[[S80:trID]]]]::[[U0:TeamRaiserID=[[S42:0:fr-id]]]]]]]]::<!-- id in fr_id = x[[S334:fr_id]]x -->[[U0:TeamRaiserID=[[S334:fr_id]]]]]]::<!-- id in FR_ID = x[[S334:FR_ID]]x -->[[U0:TeamRaiserID=[[S334:FR_ID]]]]]]</p>
+		</li>
+		<li>
+			<h2>Sample 4</h2>
+			<p>[[?xTRUEx::x[[S45:Active_Group_ID]]x::1-3DMQ3C7::[[?xTRUEx::x[[S45:Lapsed_Group_ID]]x::1-3DMQ3CB::[[?xTRUEx::x[[S45:NonDonor_Group_ID]]x::1-3DMQ3CF::[[?xTRUEx::x[[S45:Renewal_Group_ID]]x::1-369HW38::1-3E0URWP]]]]]]]]</p>
+		</li>
+		<!--
+		this LI is simply commentd because it screws up color coding in editors
+		<li>
+			<h2>Sample 5</h2>
+			<p>[[?xTRUEx::x[[S45:534554]]x::sscid=1-3DMQ3C7&rscid=1-3DMQ3EH&ssc=7::[[?xTRUEx::x[[S45:534555]]x::sscid=1-3DMQ3CB&rscid=1-3DMQ3EL&ssc=7::[[?xTRUEx::x[[S45:534556]]x::sscid=1-3DMQ3CF&rscid=1-3DMQ3G3&ssc=20::[[?xTRUEx::x[[S45:534557]]x::sscid=1-369HW38&rscid=1-3DQYTID&ssc=7::sscid=1-3E0URWP&rscid=1-3E0URWT&ssc=20]]]]]]]]</p>
+		</li>
+		-->
+	</ul>
+
+	<div class="test-area">
+		<p>To use, simply copy one of the samples above and paste into the textarea below and use the `Minify` / `Beautify` buttons to either compress or pretty print Convio code</p>
+		<div>
+			<button id="minify">Minify</button>
+			<button id="submit">Beautify</button>
+		</div>
+		<textarea id="source" rows="10" cols="150"></textarea>
+	</div>
+
+</body>
+</html>
+<script>
+/***********/
+/* STARTUP */
+/***********/
+$(function() {
+
+	var convio_beautifier = {
+	    inProgress: false
+	};
+
+    if ( $.browser.msie ) {
+        $('#source')
+			.width( $( '#textarea-wrap' ).width() - 10 )
+			.height( $( '#textarea-wrap' ).height() - 10 );
+    }
+
+	// version 1
+	var default_text = '[[?xxnullx::x[[S42:0:fr-id]]x:: <!-- no id --> [[U0:TeamRaiserID=[[S80:trID]]]]::[[U0:TeamRaiserID=[[S42:0:fr-id]]]]]]';
+	// version 2
+	//var default_text = '[[?[[?[[S8]]::team_id::T::]][[?[[S8]]::pg=personal::T::]]::T::<!-- Team or personal page -->[[S51:RFL_FY12_styles]][[S51:RFL_FY12_styles_team]]:: [[?[[S8]]::pg=company::<!--Company page 555555555555  -->[[S51:RFL_FY12_styles]][[S51:RFL_FY12_styles_company]]:: [[S51:RFL_FY12_styles]][[S51:RFL_FY12_reus_head]]]]]]';
+	//var default_text = '[[?[[?[[S8]]::team_id::T::]][[?[[S8]]::pg=personal::T::]]::T::<!-- Team or personal page --><div><p>same as sample 2 but with HTML</p></div>[[S51:RFL_FY12_styles]][[S51:RFL_FY12_styles_team]]:: [[?[[S8]]::pg=company::<!--Company page 555555555555  -->[[S51:RFL_FY12_styles]][[S51:RFL_FY12_styles_company]]:: [[S51:RFL_FY12_styles]][[S51:RFL_FY12_reus_head]]]]]]';
+	// version 3
+	//var default_text = '[[?xxnullx::x[[S334:FR_ID]]x::[[?xxnullx::x[[S334:fr_id]]x::[[?xRR_FY12_PC2x::x[[S334:pagename]]x::[[U0:TeamRaiserID=[[E130:[[T8:[[S50:Cookie]]]] dup dup "frId=" indexof 5 + swap length substring dup 0 swap ";" indexof substring]]]]::[[?xxnullx::x[[S42:0:fr-id]]x::<!-- no id -->[[U0:TeamRaiserID=[[S80:trID]]]]::[[U0:TeamRaiserID=[[S42:0:fr-id]]]]]]]]::<!-- id in fr_id = x[[S334:fr_id]]x -->[[U0:TeamRaiserID=[[S334:fr_id]]]]]]::<!-- id in FR_ID = x[[S334:FR_ID]]x -->[[U0:TeamRaiserID=[[S334:FR_ID]]]]]]';
+	// version 4
+	//var default_text = '[[?xTRUEx::x[[S45:Active_Group_ID]]x::1-3DMQ3C7::[[?xTRUEx::x[[S45:Lapsed_Group_ID]]x::1-3DMQ3CB::[[?xTRUEx::x[[S45:NonDonor_Group_ID]]x::1-3DMQ3CF::[[?xTRUEx::x[[S45:Renewal_Group_ID]]x::1-369HW38::1-3E0URWP]]]]]]]]';
+	// version 5
+	//var default_text = '[[?xTRUEx::x[[S45:534554]]x::sscid=1-3DMQ3C7&rscid=1-3DMQ3EH&ssc=7::[[?xTRUEx::x[[S45:534555]]x::sscid=1-3DMQ3CB&rscid=1-3DMQ3EL&ssc=7::[[?xTRUEx::x[[S45:534556]]x::sscid=1-3DMQ3CF&rscid=1-3DMQ3G3&ssc=20::[[?xTRUEx::x[[S45:534557]]x::sscid=1-369HW38&rscid=1-3DQYTID&ssc=7::sscid=1-3E0URWP&rscid=1-3E0URWT&ssc=20]]]]]]]]';
+	//var default_text = '[[?xxnullx::x[[S42:0:fr-id]]x::<div class="test">TEST</div> [[U0:TeamRaiserID=[[S80:trID]]]]::[[U0:TeamRaiserID=[[S42:0:fr-id]]]]]]';
+
+
+    $( '#source' ).val( default_text )
+		.bind( 'click focus', function () {
+	        if ( $( this ).val() == default_text ) {
+    	        $( this ).val('');
+        	}
+	    })
+		.bind('blur', function () {
+	        if ( ! $( this ).val() ) {
+    	        $( this ).val( default_text );
+        	}
+	    });
+
+    $( window ).bind( 'keydown', function (e) {
+        if ( e.ctrlKey && e.keyCode == 13 ) {
+            beautify();
+        }
+    });
+
+    $( '#submit' ).click( function() { beautify(); } );
+	$( '#minify' ).click( function() { minify(); } );
+
+	function beautify() {
+	    if ( convio_beautifier.inProgress ) return;
+
+	    convio_beautifier.inProgress = true;
+
+	    var source = $( '#source' ).val();
+	    var indent_size = 1;
+	    var indent_char = indent_size == 1 ? '\t' : ' ';
+	    var preserve_newlines = true;
+	    var keep_array_indentation = false;
+	    var brace_style = 'collapse';
+
+	    var comment_mark = '<-' + '-';
+	    var opts = {
+			indent_size: indent_size,
+			indent_char: indent_char,
+			preserve_newlines:preserve_newlines,
+			brace_style: brace_style,
+			keep_array_indentation:keep_array_indentation,
+			space_after_anon_function:true
+		};
+		var v = convio_beautify( source, opts );
+		$( '#source' ).val(v);
+	    convio_beautifier.inProgress = false;
+	}
+
+	function minify() {
+		var s = $( '#source' ).val();
+		s = s.replace( /\r\n|\r|\n|\t/g, '' );
+		$( '#source' ).val(s);
+	}
+
+});
+
+</script>
